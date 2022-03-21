@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  SSM Automation Document run a custom SSM Command Document against a fleet of
+  target instances.
+Parameters:
+  AutomationDocumentName:
+    Type: String
+    Description: Name of created SSM Automation Document
+    Default: MyAutomation
+  CommandDocumentName:
+    Type: String
+    Description: Name of SSM Command Document to run
+    Default: MyCommand
+  OutputS3BucketName:
+    Type: String
+    Description: Name of Output S3 Bucket
+    Default: ''
+  OutputS3KeyPrefix:
+    Type: String
+    Description: Output S3 Key Prefix
+    Default: ''
+Conditions:
+  HasS3Name:
+    !Equals [!Ref OutputS3BucketName, '']
+  OutputToS3:
+    !Not [Condition: HasS3Name]
+  HasS3Prefix:
+    !Equals [!Ref OutputS3KeyPrefix, '']
+  AddS3Prefix:
+    !Not [Condition: HasS3Prefix]
+Resources:
+  AutomationDocument:
+    Type: 'AWS::SSM::Document'
+    Properties:
+      Name: !Ref AutomationDocumentName
+      DocumentType: Automation
+      Content:
+        description: Run custom Command Document
+        schemaVersion: '0.3'
+        assumeRole: '{{AutomationAssumeRole}}'
+        parameters:
+          InstanceId:
+            type: StringList
+            description: "(Required) EC2 Instance(s) to run command"
+          AutomationAssumeRole:
+            type: String
+            default: ''
+            description: >-
+              (Optional) The ARN of the role that allows Automation to perform
+              the actions on your behalf.
+        mainSteps:
+          - name: RunCommand
+            action: 'aws:runCommand'
+            inputs:
+              DocumentName: !Ref CommandDocumentName
+              InstanceIds:
+                - '{{InstanceId}}'
+              OutputS3BucketName:
+                !If
+                - OutputToS3
+                - !Ref OutputS3BucketName
+                - !Ref "AWS::NoValue"
+              OutputS3KeyPrefix:
+                !If
+                - AddS3Prefix
+                - !Ref OutputS3KeyPrefix
+                - !Ref "AWS::NoValue"
+

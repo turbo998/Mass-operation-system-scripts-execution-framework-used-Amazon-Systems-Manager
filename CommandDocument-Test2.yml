@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  Test RunCommand and Output to Shared S3 Bucket
+Parameters:
+  CommandDocumentName:
+    Type: String
+    Description: Name of created SSM Command Document
+    Default: UnnamedCommandDocuemnt
+Resources:
+  CommandDocument:
+    Type: 'AWS::SSM::Document'
+    Properties:
+      Name: !Ref CommandDocumentName
+      DocumentType: Command
+      Content:
+        schemaVersion: '2.2'
+        description: Test RunCommand and Output to Shared S3 Bucket
+        mainSteps:
+          - precondition:
+              StringEquals:
+                - platformType
+                - Linux
+            action: 'aws:runShellScript'
+            name: runShellScript
+            inputs:
+              runCommand:
+                - 'TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")'
+                - 'curl http://169.254.169.254/latest/meta-data/instance-id -H "X-aws-ec2-metadata-token: $TOKEN"'

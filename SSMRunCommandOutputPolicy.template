@@ -1,0 +1,33 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+
+  "Description": "Policy attached to SSM Managed Instance's profile, which allow SSM RunCommand output to organization central S3 bucket",
+  "Parameters": {
+    "TargetS3BucketArn": {
+      "Type": "String",
+      "Description": "SSM RunCommand Output S3 Bucket ARN"
+    }
+  },
+  "Resources": {
+    "SSMRunCommandOutputPolicy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Properties": {
+        "ManagedPolicyName": "SSMRunCommandOutputPolicy",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:PutObjectAcl"
+              ],
+              "Resource": { "Ref": "TargetS3BucketArn" }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
